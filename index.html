@@ -336,7 +336,51 @@ section { position: relative; z-index: 2; }
   line-height: 1.9;
 }
 
+.halls-row {
+  display: flex;
+  gap: 0.9rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 1.6rem;
+}
+.hall-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  min-width: 140px;
+  padding: 1rem 1.2rem;
+  border-radius: 16px;
+  background: rgba(250,246,236,0.7);
+  border: 1px solid rgba(201,162,76,0.35);
+}
+.hall-icon { font-size: 1.4rem; margin-bottom: 0.2rem; }
+.hall-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  color: var(--emerald);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.hall-name {
+  font-family: 'Aref Ruqaa', serif;
+  font-size: 1.15rem;
+  color: var(--emerald-deep);
+}
+
 /* ── Hijri toggle ── */
+.event-note {
+  margin-top: 1.4rem;
+  font-family: 'Amiri', serif;
+  font-size: 0.95rem;
+  color: var(--gold-pale);
+  background: rgba(201,162,76,0.1);
+  border: 1px solid rgba(201,162,76,0.35);
+  border-radius: 50px;
+  padding: 0.55rem 1.3rem;
+  display: inline-block;
+}
+
 .date-toggle-wrap {
   display: flex;
   flex-direction: column;
@@ -475,10 +519,10 @@ section { position: relative; z-index: 2; }
     </div>
 
     <div class="actions" style="margin-top:2rem;">
-      <button class="btn btn-primary" id="calendarBtn">📅 أضف إلى التقويم</button>
-      <a class="btn" id="locationBtn" href="#" target="_blank" rel="noopener">📍 الموقع والاتجاهات</a>
-      <button class="btn" id="shareBtn">📤 مشاركة الدعوة</button>
+      <a class="btn btn-primary" id="locationBtn" href="#" target="_blank" rel="noopener">📍 الموقع والاتجاهات</a>
     </div>
+
+    <p class="event-note" id="eventNote">الفرح غير مختلط، وبدون موسيقى بإذن الله</p>
   </section>
 
   <!-- ============ BLESSING / INTERACTIVE TAP ============ -->
@@ -498,7 +542,22 @@ section { position: relative; z-index: 2; }
     <div class="location-card">
       <p class="venue-name" id="venueName">قاعة سنابل</p>
       <p class="venue-address" id="venueAddress">شارع مؤسسة الزكاة، بجوار أبو عمار</p>
+
+      <div class="halls-row">
+        <div class="hall-chip">
+          <span class="hall-icon">🕌</span>
+          <span class="hall-label">الرجال</span>
+          <span class="hall-name" id="venueMenHall">قاعة الأحلام</span>
+        </div>
+        <div class="hall-chip">
+          <span class="hall-icon">💎</span>
+          <span class="hall-label">النساء</span>
+          <span class="hall-name" id="venueWomenHall">قاعة الجوهرة</span>
+        </div>
+      </div>
+
       <a class="btn btn-primary" id="locationBtn2" href="#" target="_blank" rel="noopener">🗺️ افتح الموقع على الخريطة</a>
+      <p class="event-note" style="margin-top:1.4rem;">الفرح غير مختلط، وبدون موسيقى بإذن الله</p>
     </div>
   </section>
 
@@ -524,11 +583,11 @@ const CONFIG = {
   dateTimeISO: "2026-07-15T20:00:00+02:00",  // موعد الحفل (بتوقيت القاهرة)
   dateDisplayGregorian: "الأربعاء ١٥ يوليو ٢٠٢٦ — الساعة ٨:٠٠ مساءً",
 
-  venueName:    "قاعة سنابل",
+  venueName:    "قاعة سنابل للأفراح",
   venueAddress: "شارع مؤسسة الزكاة، بجوار أبو عمار",
-  mapUrl:       "https://share.google/zImBJ4Ix5hoJKekAn",
-
-  eventDurationHours: 4  // لملف التقويم (ICS)
+  venueMenHall:   "قاعة الأحلام",
+  venueWomenHall: "قاعة الجوهرة",
+  mapUrl:       "https://share.google/zImBJ4Ix5hoJKekAn"
 };
 
 /* ------------------------------------------------------------------------
@@ -540,6 +599,8 @@ if (CONFIG.useNamesAsTitle) {
 }
 document.getElementById('venueName').textContent = CONFIG.venueName;
 document.getElementById('venueAddress').textContent = CONFIG.venueAddress;
+document.getElementById('venueMenHall').textContent = CONFIG.venueMenHall;
+document.getElementById('venueWomenHall').textContent = CONFIG.venueWomenHall;
 document.getElementById('locationBtn').href = CONFIG.mapUrl;
 document.getElementById('locationBtn2').href = CONFIG.mapUrl;
 document.title = "زفافنا — " + CONFIG.dateDisplayGregorian;
@@ -619,54 +680,6 @@ dateToggleEl.addEventListener('click', () => {
   showingHijri = !showingHijri;
   dateToggleEl.style.opacity = '0';
   setTimeout(() => { renderDateToggle(); dateToggleEl.style.opacity = '1'; }, 180);
-});
-
-/* ------------------------------------------------------------------------
-   Add to calendar (.ics)
-   ------------------------------------------------------------------------ */
-document.getElementById('calendarBtn').addEventListener('click', () => {
-  const start = new Date(CONFIG.dateTimeISO);
-  const end = new Date(start.getTime() + CONFIG.eventDurationHours * 3600000);
-  const fmt = (d) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-  const ics = [
-    'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Wedding//AR','BEGIN:VEVENT',
-    `UID:${Date.now()}@wedding`,
-    `DTSTAMP:${fmt(new Date())}`,
-    `DTSTART:${fmt(start)}`,
-    `DTEND:${fmt(end)}`,
-    `SUMMARY:حفل الزفاف`,
-    `LOCATION:${CONFIG.venueName} - ${CONFIG.venueAddress}`,
-    `DESCRIPTION:نتشرف بحضوركم حفل زفافنا`,
-    'END:VEVENT','END:VCALENDAR'
-  ].join('\r\n');
-  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'wedding-invite.ics';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  showToast('تم تحميل الحدث 📅');
-});
-
-/* ------------------------------------------------------------------------
-   Share
-   ------------------------------------------------------------------------ */
-document.getElementById('shareBtn').addEventListener('click', async () => {
-  const shareData = {
-    title: 'دعوة زفاف',
-    text: `نتشرف بحضوركم حفل زفافنا يوم ${CONFIG.dateDisplayGregorian} في ${CONFIG.venueName}`,
-    url: window.location.href
-  };
-  if (navigator.share) {
-    try { await navigator.share(shareData); } catch (e) {}
-  } else {
-    try {
-      await navigator.clipboard.writeText(shareData.text + ' - ' + shareData.url);
-      showToast('تم نسخ رابط الدعوة 📋');
-    } catch (e) {
-      showToast('انسخ الرابط من شريط العنوان 🔗');
-    }
-  }
 });
 
 function showToast(msg) {
